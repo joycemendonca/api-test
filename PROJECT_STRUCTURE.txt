@@ -1,0 +1,153 @@
+test-api/
+│
+├── src/
+│   ├── config/
+│   │   └── database.js              # Sequelize SQLite configuration
+│   │
+│   ├── models/
+│   │   ├── index.js                 # Model initialization & associations
+│   │   ├── User.js                  # User model (id, email, password, name)
+│   │   └── Todo.js                  # Todo model (id, userId, title, description, completed)
+│   │
+│   ├── controllers/
+│   │   ├── authController.js        # register, login, logout
+│   │   ├── userController.js        # getProfile, updateProfile, deleteAccount
+│   │   ├── todoController.js        # CRUD operations + markAsCompleted
+│   │   ├── errorController.js       # Error simulation endpoints
+│   │   └── healthController.js      # Health check
+│   │
+│   ├── routes/
+│   │   ├── auth.js                  # /api/auth/*
+│   │   ├── users.js                 # /api/users/*
+│   │   ├── todos.js                 # /api/todos/*
+│   │   ├── errors.js                # /api/errors/*
+│   │   └── health.js                # /health
+│   │
+│   ├── middlewares/
+│   │   ├── auth.js                  # JWT verification & blacklist check
+│   │   ├── requestMetadata.js       # X-Request-ID & X-App-Version headers
+│   │   └── errorHandler.js          # Global error handler
+│   │
+│   ├── validations/
+│   │   ├── auth.js                  # registerSchema, loginSchema
+│   │   ├── todo.js                  # createTodoSchema, updateTodoSchema
+│   │   └── user.js                  # updateUserSchema
+│   │
+│   ├── utils/
+│   │   ├── tokenBlacklist.js        # In-memory token blacklist (Set)
+│   │   └── responseFormatter.js     # successResponse, errorResponse
+│   │
+│   ├── app.js                       # Express app setup & middleware
+│   └── server.js                    # Server entry point
+│
+├── database/
+│   ├── seeders/
+│   │   └── seed.js                  # Create 3 users + 10 todos
+│   ├── migrate.js                   # Run migrations
+│   ├── reset.js                     # Drop, recreate, seed
+│   └── dev.sqlite                   # SQLite database (generated)
+│
+├── __tests__/                       # Existing test files (preserved)
+│   └── users/
+│       ├── index.js
+│       ├── test1.js
+│       └── listagem.js
+│
+├── node_modules/                    # Dependencies (npm install)
+│
+├── .env                             # Environment variables
+├── .env.example                     # Environment template
+├── .gitignore                       # Git ignore rules
+├── .noai                            # User file (preserved)
+├── .tool-versions                   # asdf version manager
+│
+├── package.json                     # Dependencies & scripts
+├── package-lock.json                # Lock file
+│
+├── README.md                        # Complete API documentation (14KB)
+├── QUICKSTART.md                    # Quick setup guide
+├── PROJECT_SUMMARY.md               # Implementation overview
+├── TESTING_EXAMPLES.md              # cURL & test examples
+├── CHECKLIST.md                     # Implementation checklist
+└── postman_collection.json          # Postman collection
+
+---
+
+📊 STATISTICS:
+- 24 JavaScript source files
+- 5 Documentation files
+- 19 API endpoints
+- 2 Database models
+- 5 Controllers
+- 5 Route files
+- 3 Middleware files
+- 3 Validation schemas
+- 2 Utility modules
+
+🎯 ENDPOINTS:
+Authentication (3):
+  POST   /api/auth/register
+  POST   /api/auth/login
+  POST   /api/auth/logout
+
+Users (3):
+  GET    /api/users/me
+  PUT    /api/users/me
+  DELETE /api/users/me
+
+Todos (6):
+  POST   /api/todos
+  GET    /api/todos
+  GET    /api/todos/:id
+  PUT    /api/todos/:id
+  PATCH  /api/todos/:id/complete
+  DELETE /api/todos/:id
+
+Error Simulation (6):
+  GET    /api/errors/400
+  GET    /api/errors/401
+  GET    /api/errors/403
+  GET    /api/errors/404
+  GET    /api/errors/500
+  GET    /api/errors/delay
+
+Health (1):
+  GET    /health
+
+🔐 SECURITY:
+- JWT authentication (24h expiration)
+- Bcrypt password hashing (10 rounds)
+- Token blacklist on logout
+- Protected routes with middleware
+- User ownership verification
+
+✅ VALIDATION:
+- Email format validation
+- Password minimum 8 characters
+- Todo title max 100 characters
+- Todo description max 500 characters
+- Clear error messages
+
+📦 TEST DATA:
+- 3 test users (password: password123)
+  - tester1@example.com
+  - tester2@example.com
+  - tester3@example.com
+- 10 sample todos across users
+- Mix of completed/incomplete states
+
+🛠️ TECHNOLOGIES:
+- Node.js / Express.js
+- SQLite + Sequelize ORM
+- JWT for authentication
+- Zod for validation
+- Bcrypt for password hashing
+- CORS, dotenv, uuid
+
+📚 DOCUMENTATION:
+- Complete API reference with examples
+- Quick start guide
+- Testing examples (cURL, Postman)
+- Project summary
+- Implementation checklist
+- Postman collection included
