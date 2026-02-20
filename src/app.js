@@ -1,6 +1,8 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const swaggerUi = require('swagger-ui-express');
+const YAML = require('yamljs');
 const requestMetadata = require('./middlewares/requestMetadata');
 const errorHandler = require('./middlewares/errorHandler');
 
@@ -13,10 +15,19 @@ const healthRoutes = require('./routes/health');
 
 const app = express();
 
+// Load Swagger documentation
+const swaggerDocument = YAML.load('./swagger.yaml');
+
 // Middleware
 app.use(cors());
 app.use(express.json());
 app.use(requestMetadata);
+
+// Swagger documentation UI
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument, {
+  customSiteTitle: 'TODO API Documentation',
+  customCss: '.swagger-ui .topbar { display: none }',
+}));
 
 // Routes
 app.use('/api/auth', authRoutes);

@@ -1,0 +1,992 @@
+openapi: 3.0.0
+info:
+  title: TODO API Testing Playground
+  version: 1.0.0
+  description: |
+    A comprehensive TODO API built specifically for QA engineers to practice API testing scenarios.
+    
+    This API includes:
+    - JWT-based authentication
+    - User management
+    - Todo CRUD operations
+    - Advanced filtering and pagination
+    - Error simulation endpoints
+    - Comprehensive validation
+    
+    **Test Credentials:**
+    - Email: tester1@example.com | Password: password123
+    - Email: tester2@example.com | Password: password123
+    - Email: tester3@example.com | Password: password123
+  contact:
+    name: API Support
+  license:
+    name: ISC
+
+servers:
+  - url: http://localhost:3000
+    description: Development server
+
+tags:
+  - name: Authentication
+    description: User registration, login, and logout operations
+  - name: Users
+    description: User profile management
+  - name: Todos
+    description: Todo CRUD operations with filtering and pagination
+  - name: Error Simulation
+    description: Endpoints for testing error handling scenarios
+  - name: Health
+    description: API health check
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from login/register endpoints
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        email:
+          type: string
+          format: email
+          example: tester1@example.com
+        name:
+          type: string
+          example: Tester One
+        createdAt:
+          type: string
+          format: date-time
+          example: 2024-01-01T00:00:00.000Z
+        updatedAt:
+          type: string
+          format: date-time
+          example: 2024-01-01T00:00:00.000Z
+
+    Todo:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        userId:
+          type: integer
+          example: 1
+        title:
+          type: string
+          maxLength: 100
+          example: Complete API testing workshop
+        description:
+          type: string
+          maxLength: 500
+          nullable: true
+          example: Learn about different testing scenarios and HTTP methods
+        completed:
+          type: boolean
+          example: false
+        createdAt:
+          type: string
+          format: date-time
+          example: 2024-01-01T00:00:00.000Z
+        updatedAt:
+          type: string
+          format: date-time
+          example: 2024-01-01T00:00:00.000Z
+
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+        message:
+          type: string
+          nullable: true
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          oneOf:
+            - type: string
+            - type: array
+              items:
+                type: object
+        message:
+          type: string
+          nullable: true
+
+    PaginationMeta:
+      type: object
+      properties:
+        total:
+          type: integer
+          example: 10
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 10
+        totalPages:
+          type: integer
+          example: 1
+
+    RegisterRequest:
+      type: object
+      required:
+        - email
+        - password
+        - name
+      properties:
+        email:
+          type: string
+          format: email
+          example: newuser@example.com
+        password:
+          type: string
+          minLength: 8
+          example: password123
+        name:
+          type: string
+          minLength: 1
+          example: New User
+
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: tester1@example.com
+        password:
+          type: string
+          example: password123
+
+    AuthResponse:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                user:
+                  $ref: '#/components/schemas/User'
+                token:
+                  type: string
+                  example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+    UpdateUserRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          minLength: 1
+          example: Updated Name
+
+    CreateTodoRequest:
+      type: object
+      required:
+        - title
+      properties:
+        title:
+          type: string
+          maxLength: 100
+          example: My new todo
+        description:
+          type: string
+          maxLength: 500
+          nullable: true
+          example: Optional description
+        completed:
+          type: boolean
+          example: false
+
+    UpdateTodoRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          maxLength: 100
+          example: Updated title
+        description:
+          type: string
+          maxLength: 500
+          nullable: true
+          example: Updated description
+        completed:
+          type: boolean
+          example: true
+
+  parameters:
+    TodoIdParam:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+      description: Todo ID
+      example: 1
+
+  responses:
+    UnauthorizedError:
+      description: Missing or invalid authentication token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            error: No token provided
+
+    ForbiddenError:
+      description: Access forbidden - user does not own this resource
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            error: You don't have permission to access this todo
+
+    NotFoundError:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            error: Todo not found
+
+    ValidationError:
+      description: Validation failed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            error:
+              - field: email
+                message: Email must be a valid email address
+            message: Validation failed
+
+paths:
+  /api/auth/register:
+    post:
+      tags:
+        - Authentication
+      summary: Register a new user
+      description: Creates a new user account with email, password, and name. Returns user details and JWT token.
+      operationId: register
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: User registered successfully
+          headers:
+            X-Request-ID:
+              schema:
+                type: string
+                format: uuid
+              description: Unique request identifier
+            X-App-Version:
+              schema:
+                type: string
+              description: API version
+              example: 1.0.0
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Validation error or email already registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                duplicateEmail:
+                  value:
+                    success: false
+                    error: Email already registered
+                validation:
+                  value:
+                    success: false
+                    error:
+                      - field: password
+                        message: Password must be at least 8 characters
+                    message: Validation failed
+
+  /api/auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: Login user
+      description: Authenticate user with email and password. Returns user details and JWT token.
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          headers:
+            X-Request-ID:
+              schema:
+                type: string
+                format: uuid
+            X-App-Version:
+              schema:
+                type: string
+              example: 1.0.0
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                error: Invalid email or password
+
+  /api/auth/logout:
+    post:
+      tags:
+        - Authentication
+      summary: Logout user
+      description: Invalidates the current JWT token by adding it to a blacklist
+      operationId: logout
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Logout successful
+          headers:
+            X-Request-ID:
+              schema:
+                type: string
+                format: uuid
+            X-App-Version:
+              schema:
+                type: string
+              example: 1.0.0
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+              example:
+                success: true
+                data: null
+                message: Logout successful
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/users/me:
+    get:
+      tags:
+        - Users
+      summary: Get current user profile
+      description: Retrieves the profile of the currently authenticated user
+      operationId: getProfile
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User profile retrieved successfully
+          headers:
+            X-Request-ID:
+              schema:
+                type: string
+                format: uuid
+            X-App-Version:
+              schema:
+                type: string
+              example: 1.0.0
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          user:
+                            $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+    put:
+      tags:
+        - Users
+      summary: Update user profile
+      description: Updates the name of the currently authenticated user
+      operationId: updateProfile
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRequest'
+      responses:
+        '200':
+          description: Profile updated successfully
+          headers:
+            X-Request-ID:
+              schema:
+                type: string
+                format: uuid
+            X-App-Version:
+              schema:
+                type: string
+              example: 1.0.0
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          user:
+                            type: object
+                            properties:
+                              id:
+                                type: integer
+                              email:
+                                type: string
+                              name:
+                                type: string
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    delete:
+      tags:
+        - Users
+      summary: Delete user account
+      description: Deletes the currently authenticated user account and all associated todos
+      operationId: deleteAccount
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Account deleted successfully
+          headers:
+            X-Request-ID:
+              schema:
+                type: string
+                format: uuid
+            X-App-Version:
+              schema:
+                type: string
+              example: 1.0.0
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+              example:
+                success: true
+                data: null
+                message: Account deleted successfully
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/todos:
+    post:
+      tags:
+        - Todos
+      summary: Create a new todo
+      description: Creates a new todo for the currently authenticated user
+      operationId: createTodo
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTodoRequest'
+      responses:
+        '201':
+          description: Todo created successfully
+          headers:
+            X-Request-ID:
+              schema:
+                type: string
+                format: uuid
+            X-App-Version:
+              schema:
+                type: string
+              example: 1.0.0
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          todo:
+                            $ref: '#/components/schemas/Todo'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    get:
+      tags:
+        - Todos
+      summary: Get all todos with filters
+      description: Retrieves todos for the authenticated user with optional filtering, search, and pagination
+      operationId: getAllTodos
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: completed
+          in: query
+          description: Filter by completion status
+          required: false
+          schema:
+            type: boolean
+          example: true
+        - name: search
+          in: query
+          description: Search todos by title (case-insensitive partial match)
+          required: false
+          schema:
+            type: string
+          example: test
+        - name: page
+          in: query
+          description: Page number for pagination
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          example: 1
+        - name: limit
+          in: query
+          description: Number of items per page
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 10
+          example: 10
+      responses:
+        '200':
+          description: Todos retrieved successfully
+          headers:
+            X-Request-ID:
+              schema:
+                type: string
+                format: uuid
+            X-App-Version:
+              schema:
+                type: string
+              example: 1.0.0
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          todos:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/Todo'
+                          pagination:
+                            $ref: '#/components/schemas/PaginationMeta'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/todos/{id}:
+    get:
+      tags:
+        - Todos
+      summary: Get todo by ID
+      description: Retrieves a specific todo by ID (must belong to authenticated user)
+      operationId: getTodoById
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TodoIdParam'
+      responses:
+        '200':
+          description: Todo retrieved successfully
+          headers:
+            X-Request-ID:
+              schema:
+                type: string
+                format: uuid
+            X-App-Version:
+              schema:
+                type: string
+              example: 1.0.0
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          todo:
+                            $ref: '#/components/schemas/Todo'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+    put:
+      tags:
+        - Todos
+      summary: Update todo
+      description: Updates a todo (must belong to authenticated user)
+      operationId: updateTodo
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TodoIdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTodoRequest'
+      responses:
+        '200':
+          description: Todo updated successfully
+          headers:
+            X-Request-ID:
+              schema:
+                type: string
+                format: uuid
+            X-App-Version:
+              schema:
+                type: string
+              example: 1.0.0
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          todo:
+                            $ref: '#/components/schemas/Todo'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+    delete:
+      tags:
+        - Todos
+      summary: Delete todo
+      description: Deletes a todo (must belong to authenticated user)
+      operationId: deleteTodo
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TodoIdParam'
+      responses:
+        '200':
+          description: Todo deleted successfully
+          headers:
+            X-Request-ID:
+              schema:
+                type: string
+                format: uuid
+            X-App-Version:
+              schema:
+                type: string
+              example: 1.0.0
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+              example:
+                success: true
+                data: null
+                message: Todo deleted successfully
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /api/todos/{id}/complete:
+    patch:
+      tags:
+        - Todos
+      summary: Mark todo as completed
+      description: Sets the completed flag to true for a todo (must belong to authenticated user)
+      operationId: markAsCompleted
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TodoIdParam'
+      responses:
+        '200':
+          description: Todo marked as completed
+          headers:
+            X-Request-ID:
+              schema:
+                type: string
+                format: uuid
+            X-App-Version:
+              schema:
+                type: string
+              example: 1.0.0
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          todo:
+                            $ref: '#/components/schemas/Todo'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /api/errors/400:
+    get:
+      tags:
+        - Error Simulation
+      summary: Simulate 400 Bad Request
+      description: Returns a simulated 400 error response for testing
+      operationId: error400
+      responses:
+        '400':
+          description: Simulated Bad Request error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                error: Bad Request - This is a simulated 400 error
+
+  /api/errors/401:
+    get:
+      tags:
+        - Error Simulation
+      summary: Simulate 401 Unauthorized
+      description: Returns a simulated 401 error response for testing
+      operationId: error401
+      responses:
+        '401':
+          description: Simulated Unauthorized error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                error: Unauthorized - This is a simulated 401 error
+
+  /api/errors/403:
+    get:
+      tags:
+        - Error Simulation
+      summary: Simulate 403 Forbidden
+      description: Returns a simulated 403 error response for testing
+      operationId: error403
+      responses:
+        '403':
+          description: Simulated Forbidden error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                error: Forbidden - This is a simulated 403 error
+
+  /api/errors/404:
+    get:
+      tags:
+        - Error Simulation
+      summary: Simulate 404 Not Found
+      description: Returns a simulated 404 error response for testing
+      operationId: error404
+      responses:
+        '404':
+          description: Simulated Not Found error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                error: Not Found - This is a simulated 404 error
+
+  /api/errors/500:
+    get:
+      tags:
+        - Error Simulation
+      summary: Simulate 500 Internal Server Error
+      description: Returns a simulated 500 error response for testing
+      operationId: error500
+      responses:
+        '500':
+          description: Simulated Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                error: Internal Server Error - This is a simulated 500 error
+
+  /api/errors/delay:
+    get:
+      tags:
+        - Error Simulation
+      summary: Delayed response
+      description: Returns a response after a specified delay (useful for timeout testing)
+      operationId: delayedResponse
+      parameters:
+        - name: ms
+          in: query
+          description: Delay in milliseconds (max 10000)
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 10000
+            default: 2000
+          example: 2000
+      responses:
+        '200':
+          description: Response after delay
+          headers:
+            X-Request-ID:
+              schema:
+                type: string
+                format: uuid
+            X-App-Version:
+              schema:
+                type: string
+              example: 1.0.0
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          message:
+                            type: string
+                            example: Response delayed by 2000ms
+                          delayMs:
+                            type: integer
+                            example: 2000
+
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Health check
+      description: Returns API health status and uptime information
+      operationId: healthCheck
+      responses:
+        '200':
+          description: API is healthy
+          headers:
+            X-Request-ID:
+              schema:
+                type: string
+                format: uuid
+            X-App-Version:
+              schema:
+                type: string
+              example: 1.0.0
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          status:
+                            type: string
+                            example: OK
+                          uptime:
+                            type: string
+                            example: 123 seconds
+                          timestamp:
+                            type: string
+                            format: date-time
+                            example: 2024-01-01T00:00:00.000Z

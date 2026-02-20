@@ -78,6 +78,27 @@ After seeding, you can use these credentials:
 
 ## 📚 API Documentation
 
+### Interactive API Documentation (Swagger UI)
+
+**View complete interactive API documentation at:**
+
+```
+http://localhost:3000/api-docs
+```
+
+The Swagger UI provides:
+- Complete endpoint documentation with request/response examples
+- Try-out functionality to test endpoints directly from your browser
+- Schema definitions and validation rules
+- Authentication flow documentation
+- Export capabilities (JSON/YAML)
+
+**Quick Start with Swagger:**
+1. Start the server (`npm run dev`)
+2. Open `http://localhost:3000/api-docs` in your browser
+3. Click "Authorize" to add your JWT token
+4. Try out any endpoint directly from the documentation
+
 ### Base URL
 
 ```
@@ -685,6 +706,37 @@ test-api/
 ├── package.json
 └── README.md
 ```
+
+---
+
+## 🧪 QA Testing Resources
+
+### Comprehensive Test Plan
+
+A detailed QA test plan is available in [`QA_TEST_PLAN.md`](QA_TEST_PLAN.md). This document provides:
+
+- **290+ test scenarios** covering all endpoints
+- Human-readable test case descriptions (Jira-style)
+- Test objectives and expected behaviors
+- Preconditions and data requirements
+- Edge cases and boundary testing guidelines
+- Integration workflow testing
+- Performance and security testing scenarios
+- Test execution guidance and best practices
+
+**Perfect for:**
+- Manual testing preparation
+- Creating automated test scripts
+- Learning API testing techniques
+- Test case management in Jira/similar tools
+
+### Additional Documentation
+
+- **[Swagger Documentation](http://localhost:3000/api-docs)** - Interactive API reference
+- **[QUICKSTART.md](QUICKSTART.md)** - Quick setup guide
+- **[PROJECT_SUMMARY.md](PROJECT_SUMMARY.md)** - Implementation overview
+- **[TESTING_EXAMPLES.md](TESTING_EXAMPLES.md)** - cURL and testing examples
+- **[postman_collection.json](postman_collection.json)** - Importable Postman collection
 
 ---
 
